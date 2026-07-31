@@ -9,12 +9,11 @@ class KPCWidget {
         this.preview = element.querySelector('.kpc-preview');
         this.beforeImage = element.querySelector('.kpc-before-image');
         this.afterImage = element.querySelector('.kpc-after-image');
-        this.afterWrapper = element.querySelector('.kpc-after-wrapper');
+        this.dividerContainer = element.querySelector('.kpc-divider-container');
         this.divider = element.querySelector('.kpc-divider');
         this.handle = element.querySelector('.kpc-handle');
         this.fullscreenBtn = element.querySelector('.kpc-fullscreen');
         this.pulseContainer = element.querySelector('.kpc-pulse-container');
-        this.sliderLine = element.querySelector('.kpc-slider-line');
         
         // State
         this.items = [...element.querySelectorAll('.kpc-thumb')];
@@ -26,7 +25,6 @@ class KPCWidget {
         this.isVisible = false;
         this.imagesLoaded = false;
         this.currentPercent = 50;
-		this.customHeight = element.dataset.customHeight === 'yes';
         
         // Configuration
         this.interval = parseInt(element.dataset.interval || 3000, 10);
@@ -44,7 +42,6 @@ class KPCWidget {
         this.handleTouchEnd = this.handleTouchEnd.bind(this);
         this.handleResize = this.debounce(this.handleResize.bind(this), 250);
         this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
-        this.initializeSlider = this.initializeSlider.bind(this);
         
         this.init();
     }
@@ -285,218 +282,235 @@ class KPCWidget {
     }
 
     activate(index, manual = false) {
-        const item = this.items[index];
-        if (!item) return;
+		const item = this.items[index];
+		if (!item) return;
 
-        const before = item.dataset.before;
-        const after = item.dataset.after;
+		const before = item.dataset.before;
+		const after = item.dataset.after;
 
-        this.preview.classList.add('is-loading');
-        this.preview.classList.add('is-transitioning');
+		this.preview.classList.add('is-loading');
+		this.preview.classList.add('is-transitioning');
 
-        const loadImage = (src) => {
-            return new Promise((resolve) => {
-                if (!src) {
-                    resolve();
-                    return;
-                }
-                const img = new Image();
-                img.onload = () => resolve(src);
-                img.onerror = () => {
-                    console.warn('KPC: Failed to load image', src);
-                    resolve(src);
-                };
-                img.src = src;
-            });
-        };
+		const loadImage = (src) => {
+			return new Promise((resolve) => {
+				if (!src) {
+					resolve();
+					return;
+				}
+				const img = new Image();
+				img.onload = () => resolve(src);
+				img.onerror = () => {
+					console.warn('KPC: Failed to load image', src);
+					resolve(src);
+				};
+				img.src = src;
+			});
+		};
 
-        Promise.all([
-            loadImage(before),
-            loadImage(after)
-        ]).then(() => {
-            setTimeout(() => {
-                if (before) {
-                    this.beforeImage.src = before;
-                    this.beforeImage.alt = item.dataset.title || 'Before image';
-                }
+		Promise.all([
+			loadImage(before),
+			loadImage(after)
+		]).then(() => {
+			// Apply smooth transition for image change
+			if (this.afterImage) {
+				this.afterImage.style.transition = 'opacity 0.3s ease, clip-path 0.3s ease';
+			}
+			if (this.beforeImage) {
+				this.beforeImage.style.transition = 'opacity 0.3s ease, clip-path 0.3s ease';
+			}
 
-                if (after) {
-                    this.afterImage.src = after;
-                    this.afterImage.alt = item.dataset.title || 'After image';
-                }
+			// Fade out
+			if (this.afterImage) {
+				this.afterImage.style.opacity = '0';
+			}
+			if (this.beforeImage) {
+				this.beforeImage.style.opacity = '0';
+			}
 
-                if (!manual) {
-                    this.items.forEach(i => {
-                        i.classList.remove('is-active');
-                        i.setAttribute('aria-selected', 'false');
-                    });
-                    item.classList.add('is-active');
-                    item.setAttribute('aria-selected', 'true');
-                }
+			setTimeout(() => {
+				// Update image sources
+				if (after) {
+					this.afterImage.src = after;
+					this.afterImage.alt = item.dataset.title || 'After image';
+				}
 
-                // Re-initialize slider position
-                this.initializeSlider();
-                this.updateAriaAttributes();
+				if (before) {
+					this.beforeImage.src = before;
+					this.beforeImage.alt = item.dataset.title || 'Before image';
+				}
 
-                requestAnimationFrame(() => {
-                    this.preview.classList.remove('is-transitioning');
-                    this.preview.classList.remove('is-loading');
-                });
+				if (!manual) {
+					this.items.forEach(i => {
+						i.classList.remove('is-active');
+						i.setAttribute('aria-selected', 'false');
+					});
+					item.classList.add('is-active');
+					item.setAttribute('aria-selected', 'true');
+				}
 
-            }, 150);
-        }).catch(() => {
-            this.preview.classList.remove('is-loading');
-            this.preview.classList.remove('is-transitioning');
-        });
-    }
+				// Fade in
+				if (this.afterImage) {
+					this.afterImage.style.opacity = '1';
+				}
+				if (this.beforeImage) {
+					this.beforeImage.style.opacity = '1';
+				}
+
+				// Reset slider position
+				this.initializeSlider();
+				this.updateAriaAttributes();
+
+				setTimeout(() => {
+					this.preview.classList.remove('is-transitioning');
+					this.preview.classList.remove('is-loading');
+
+					// Restore normal transitions
+					if (!this.dragging) {
+						if (this.afterImage) {
+							this.afterImage.style.transition = 'clip-path 0.15s ease';
+						}
+						if (this.beforeImage) {
+							this.beforeImage.style.transition = 'clip-path 0.15s ease';
+						}
+					}
+				}, 300);
+
+			}, 300);
+		}).catch(() => {
+			this.preview.classList.remove('is-loading');
+			this.preview.classList.remove('is-transitioning');
+		});
+	}
 
     /**
      * Initialize slider at center position
      */
     initializeSlider() {
-		const containerHeight = this.customHeight ? 
-        this.preview.offsetHeight : 
-        this.preview.offsetWidth;
-		
 		const containerWidth = this.preview.offsetWidth || this.preview.clientWidth;
 
 		if (containerWidth === 0) {
-			// If container not ready, try again
 			requestAnimationFrame(() => this.initializeSlider());
 			return;
 		}
 
 		const percent = this.initialPosition || 50;
-		const dividerContainer = this.element.querySelector('.kpc-divider-container');
 
-		// Apply smooth transition for initialization
-		if (this.beforeImage) {
-			this.beforeImage.style.transition = 'clip-path 0.3s ease';
-		}
+		// Apply smooth transition for initialization ONLY (not during drag)
 		if (this.afterImage) {
-			this.afterImage.style.transition = 'clip-path 0.3s ease';
+			this.afterImage.style.transition = 'clip-path 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 		}
-		if (dividerContainer) {
-			dividerContainer.style.transition = 'left 0.3s ease';
+		if (this.beforeImage) {
+			this.beforeImage.style.transition = 'clip-path 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+		}
+		if (this.dividerContainer) {
+			this.dividerContainer.style.transition = 'left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 		}
 
 		this.updateSlider(percent);
 
-		// Remove transitions after initialization
+		// Restore normal transitions after initialization
 		setTimeout(() => {
-			if (this.beforeImage) {
-				this.beforeImage.style.transition = 'none';
+			if (!this.dragging) {
+				if (this.afterImage) {
+					this.afterImage.style.transition = 'clip-path 0.15s ease';
+				}
+				if (this.beforeImage) {
+					this.beforeImage.style.transition = 'clip-path 0.15s ease';
+				}
+				if (this.dividerContainer) {
+					this.dividerContainer.style.transition = 'left 0.15s ease';
+				}
 			}
-			if (this.afterImage) {
-				this.afterImage.style.transition = 'none';
-			}
-			if (dividerContainer) {
-				dividerContainer.style.transition = 'none';
-			}
-		}, 350);
+		}, 450);
 	}
 
     /**
-     * Update slider position using clip-path (like the example)
+     * Update slider position - REVERSED (After on left, Before on right)
      */
     updateSlider(percent) {
 		percent = Math.max(0, Math.min(100, percent));
 		this.currentPercent = percent;
 
-		// Using clip-path method (like the example)
-		if (this.beforeImage) {
-			this.beforeImage.style.clipPath = `inset(0 ${100 - percent}% 0 0)`;
-		}
-		if (this.afterImage) {
-			this.afterImage.style.clipPath = `inset(0 0 0 ${percent}%)`;
+		// Use requestAnimationFrame for smoother updates
+		if (this._rafId) {
+			cancelAnimationFrame(this._rafId);
 		}
 
-		// UPDATE: Move the divider container instead of individual elements
-		const dividerContainer = this.element.querySelector('.kpc-divider-container');
-		if (dividerContainer) {
-			dividerContainer.style.left = percent + '%';
-			dividerContainer.style.setProperty('--kpc-divider-position', percent + '%');
-		}
-
-		// For backward compatibility, also update individual elements
-		if (this.divider) {
-			this.divider.style.left = percent + '%';
-		}
-
-		// Update slider line if it exists
-		if (this.sliderLine) {
-			this.sliderLine.style.left = percent + '%';
-		}
-
-		// Update handle position (if it's not inside the container)
-		if (this.handle) {
-			// Check if handle is inside divider container
-			const isInsideContainer = this.handle.closest('.kpc-divider-container');
-			if (!isInsideContainer) {
-				this.handle.style.left = percent + '%';
+		this._rafId = requestAnimationFrame(() => {
+			// AFTER IMAGE - Shows on the LEFT side (0 to percent)
+			if (this.afterImage) {
+				this.afterImage.style.clipPath = `inset(0 ${100 - percent}% 0 0)`;
 			}
-			this.handle.setAttribute('aria-valuenow', Math.round(percent));
-		}
 
-		// Update after wrapper if using the old method
-		if (this.afterWrapper) {
-			this.afterWrapper.style.width = percent + '%';
-		}
+			// BEFORE IMAGE - Shows on the RIGHT side (percent to 100)
+			if (this.beforeImage) {
+				this.beforeImage.style.clipPath = `inset(0 0 0 ${percent}%)`;
+			}
+
+			// Update divider container position
+			if (this.dividerContainer) {
+				this.dividerContainer.style.left = percent + '%';
+			}
+
+			// Update handle ARIA value
+			if (this.handle) {
+				this.handle.setAttribute('aria-valuenow', Math.round(percent));
+			}
+		});
 	}
 
     /**
-     * Bind slider events - Updated for the new style
+     * Bind slider events - FIXED: Handle is now draggable
      */
     bindSlider() {
-		// Use the divider container for dragging
-		const dividerContainer = this.element.querySelector('.kpc-divider-container');
+        if (!this.handle) return;
 
-		if (dividerContainer) {
-			dividerContainer.addEventListener('mousedown', this.handleMouseDown);
-			dividerContainer.addEventListener('touchstart', this.handleTouchStart, { passive: true });
-			dividerContainer.style.cursor = 'ew-resize';
-		}
-
-		// Also bind to the handle specifically
-		if (this.handle) {
-			this.handle.addEventListener('mousedown', this.handleMouseDown);
-			this.handle.addEventListener('touchstart', this.handleTouchStart, { passive: true });
-			this.handle.addEventListener('dragstart', (e) => e.preventDefault());
-		}
-
-		// Also bind to the slider line if it exists
-		if (this.sliderLine) {
-			this.sliderLine.addEventListener('mousedown', this.handleMouseDown);
-			this.sliderLine.addEventListener('touchstart', this.handleTouchStart, { passive: true });
-			this.sliderLine.addEventListener('dragstart', (e) => e.preventDefault());
-		}
-
-		// Also make the whole preview draggable on the divider line
-		if (this.divider) {
-			this.divider.addEventListener('mousedown', this.handleMouseDown);
-			this.divider.addEventListener('touchstart', this.handleTouchStart, { passive: true });
-		}
-	}
+        // Mouse events on handle
+        this.handle.addEventListener('mousedown', this.handleMouseDown);
+        
+        // Touch events on handle
+        this.handle.addEventListener('touchstart', this.handleTouchStart, { passive: true });
+        
+        // Prevent default drag behavior
+        this.handle.addEventListener('dragstart', (e) => e.preventDefault());
+        
+        // Also make the divider container draggable
+        if (this.dividerContainer) {
+            this.dividerContainer.addEventListener('mousedown', (e) => {
+                // Only trigger if clicking on the container but not on the handle
+                if (e.target !== this.handle && !this.handle.contains(e.target)) {
+                    this.handleMouseDown(e);
+                }
+            });
+        }
+    }
 
     /**
      * Handle mouse down on handle
      */
     handleMouseDown(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        this.dragging = true;
-        this.preview.classList.add('is-dragging');
-        this.stopAutoplay();
-        
-        // Store the current position for better tracking
-        this.startX = e.clientX;
-        this.startPercent = this.currentPercent;
-        
-        // Add global listeners
-        document.addEventListener('mousemove', this.handleMouseMove);
-        document.addEventListener('mouseup', this.handleMouseUp);
-    }
+		e.preventDefault();
+		e.stopPropagation();
+
+		this.dragging = true;
+		this.preview.classList.add('is-dragging');
+		this.stopAutoplay();
+
+		// REMOVE transitions immediately for instant feedback
+		if (this.afterImage) {
+			this.afterImage.style.transition = 'none';
+		}
+		if (this.beforeImage) {
+			this.beforeImage.style.transition = 'none';
+		}
+		if (this.dividerContainer) {
+			this.dividerContainer.style.transition = 'none';
+		}
+
+		// Add global listeners
+		document.addEventListener('mousemove', this.handleMouseMove);
+		document.addEventListener('mouseup', this.handleMouseUp);
+	}
 
     /**
      * Handle mouse move
@@ -518,39 +532,58 @@ class KPCWidget {
      * Handle mouse up
      */
     handleMouseUp(e) {
-        if (!this.dragging) return;
-        
-        this.dragging = false;
-        this.preview.classList.remove('is-dragging');
-        
-        // Remove global listeners
-        document.removeEventListener('mousemove', this.handleMouseMove);
-        document.removeEventListener('mouseup', this.handleMouseUp);
-        
-        // Resume autoplay
-        if (this.selected === null && this.autoplay) {
-            this.startAutoplay();
-        }
-    }
+		if (!this.dragging) return;
+
+		this.dragging = false;
+		this.preview.classList.remove('is-dragging');
+
+		// RESTORE transitions after dragging ends
+		if (this.afterImage) {
+			this.afterImage.style.transition = 'clip-path 0.15s ease';
+		}
+		if (this.beforeImage) {
+			this.beforeImage.style.transition = 'clip-path 0.15s ease';
+		}
+		if (this.dividerContainer) {
+			this.dividerContainer.style.transition = 'left 0.15s ease';
+		}
+
+		// Remove global listeners
+		document.removeEventListener('mousemove', this.handleMouseMove);
+		document.removeEventListener('mouseup', this.handleMouseUp);
+
+		// Resume autoplay
+		if (this.selected === null && this.autoplay) {
+			this.startAutoplay();
+		}
+	}
 
     /**
      * Handle touch start
      */
     handleTouchStart(e) {
-        const touch = e.touches[0];
-        if (!touch) return;
-        
-        this.dragging = true;
-        this.preview.classList.add('is-dragging');
-        this.stopAutoplay();
-        
-        this.startX = touch.clientX;
-        this.startPercent = this.currentPercent;
-        
-        // Add global touch listeners
-        document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
-        document.addEventListener('touchend', this.handleTouchEnd, { passive: true });
-    }
+		const touch = e.touches[0];
+		if (!touch) return;
+
+		this.dragging = true;
+		this.preview.classList.add('is-dragging');
+		this.stopAutoplay();
+
+		// REMOVE transitions immediately for instant feedback
+		if (this.afterImage) {
+			this.afterImage.style.transition = 'none';
+		}
+		if (this.beforeImage) {
+			this.beforeImage.style.transition = 'none';
+		}
+		if (this.dividerContainer) {
+			this.dividerContainer.style.transition = 'none';
+		}
+
+		// Add global touch listeners
+		document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+		document.addEventListener('touchend', this.handleTouchEnd, { passive: true });
+	}
 
     /**
      * Handle touch move
@@ -575,20 +608,31 @@ class KPCWidget {
      * Handle touch end
      */
     handleTouchEnd(e) {
-        if (!this.dragging) return;
-        
-        this.dragging = false;
-        this.preview.classList.remove('is-dragging');
-        
-        // Remove global touch listeners
-        document.removeEventListener('touchmove', this.handleTouchMove);
-        document.removeEventListener('touchend', this.handleTouchEnd);
-        
-        // Resume autoplay
-        if (this.selected === null && this.autoplay) {
-            this.startAutoplay();
-        }
-    }
+		if (!this.dragging) return;
+
+		this.dragging = false;
+		this.preview.classList.remove('is-dragging');
+
+		// RESTORE transitions after dragging ends
+		if (this.afterImage) {
+			this.afterImage.style.transition = 'clip-path 0.15s ease';
+		}
+		if (this.beforeImage) {
+			this.beforeImage.style.transition = 'clip-path 0.15s ease';
+		}
+		if (this.dividerContainer) {
+			this.dividerContainer.style.transition = 'left 0.15s ease';
+		}
+
+		// Remove global touch listeners
+		document.removeEventListener('touchmove', this.handleTouchMove);
+		document.removeEventListener('touchend', this.handleTouchEnd);
+
+		// Resume autoplay
+		if (this.selected === null && this.autoplay) {
+			this.startAutoplay();
+		}
+	}
 
     bindFullscreen() {
         if (!this.fullscreenBtn) return;
@@ -676,12 +720,11 @@ class KPCWidget {
         this.preview = null;
         this.beforeImage = null;
         this.afterImage = null;
-        this.afterWrapper = null;
+        this.dividerContainer = null;
         this.divider = null;
         this.handle = null;
         this.fullscreenBtn = null;
         this.pulseContainer = null;
-        this.sliderLine = null;
         this.items = [];
     }
 }

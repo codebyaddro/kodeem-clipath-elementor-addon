@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Kodeem Portfolio Compare
+ * Plugin Name: Kodeem Clipath Elementor Addon
  * Description: Professional Elementor Before/After Portfolio Showcase Widget
- * Version: 1.0.0
+ * Version: 2.0.1
  * Author: Kodeem Labs
  * Requires Plugins: elementor
  */

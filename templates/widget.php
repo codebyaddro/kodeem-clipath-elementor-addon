@@ -19,6 +19,7 @@ $initial_position = $settings['initial_position']['size'] ?? 50;
 <div <?php echo $this->get_render_attribute_string('wrapper'); ?>
     id="<?php echo esc_attr($widget_id); ?>">
     
+    <!-- GALLERY -->
     <aside class="kpc-gallery">
         <?php foreach ($items as $index => $item): ?>
             <?php 
@@ -47,46 +48,49 @@ $initial_position = $settings['initial_position']['size'] ?? 50;
         <?php endforeach; ?>
     </aside>
     
+    <!-- PREVIEW -->
     <section class="kpc-preview"
             style="aspect-ratio: <?php echo esc_attr($ratio); ?>; --kpc-ratio: <?php echo esc_attr($ratio); ?>;">
         
+        <!-- FULLSCREEN BUTTON -->
         <button class="kpc-fullscreen" 
                 aria-label="Fullscreen preview"
                 aria-controls="<?php echo esc_attr($widget_id); ?>">
             <i class="eicon-frame-expand"></i>
         </button>
         
+        <!-- LABELS - REVERSED: After on LEFT, Before on RIGHT -->
         <?php if ($show_labels): ?>
-            <div class="kpc-label kpc-label-before">
-                <?php echo esc_html($settings['before_label']); ?>
-            </div>
-            <div class="kpc-label kpc-label-after">
+            <div class="kpc-label kpc-label-after" style="left: 20px; right: auto;">
                 <?php echo esc_html($settings['after_label']); ?>
+            </div>
+            <div class="kpc-label kpc-label-before" style="right: 20px; left: auto;">
+                <?php echo esc_html($settings['before_label']); ?>
             </div>
         <?php endif; ?>
         
-        <!-- BEFORE IMAGE - Full size with clip-path -->
-        <img class="kpc-before-image"
-            src="<?php echo esc_url($before); ?>"
-            loading="eager"
-            alt="Before image">
-        
-        <!-- AFTER IMAGE - Full size with clip-path -->
+        <!-- AFTER IMAGE - LEFT SIDE (z-index: 1) -->
         <img class="kpc-after-image"
             src="<?php echo esc_url($after); ?>"
             loading="eager"
-            alt="After image">
+            alt="After image"
+            style="clip-path: inset(0 <?php echo 100 - $initial_position; ?>% 0 0); z-index: 1;">
         
-        <!-- DIVIDER CONTAINER - Wraps both the divider line and handle -->
+        <!-- BEFORE IMAGE - RIGHT SIDE (z-index: 2) -->
+        <img class="kpc-before-image"
+            src="<?php echo esc_url($before); ?>"
+            loading="eager"
+            alt="Before image"
+            style="clip-path: inset(0 0 0 <?php echo $initial_position; ?>%); z-index: 2;">
+        
+        <!-- DIVIDER CONTAINER -->
         <div class="kpc-divider-container"
-            style="--kpc-divider-position: <?php echo esc_attr($initial_position); ?>%;">
+            style="left: <?php echo esc_attr($initial_position); ?>%;">
             
             <!-- DIVIDER LINE -->
             <div class="kpc-divider"></div>
             
-            
-			
-			<!-- PULSE ANIMATION RING (if you want it separate from the handle) -->
+            <!-- PULSE ANIMATION RING (if you want it separate from the handle) -->
 			<div class="kpc-pulse-container">
 				<!-- Optional: You can keep this or move the pulse to the handle itself -->
 				<!-- HANDLE with PULSE CONTAINER -->

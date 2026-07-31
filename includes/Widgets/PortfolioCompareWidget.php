@@ -349,7 +349,7 @@ class PortfolioCompareWidget extends Widget_Base {
 				],
 				'default' => [
 					'unit' => 'px',
-					'size' => 400,
+					'size' => 200,
 				],
 				'tablet_default' => [
 					'unit' => 'px',

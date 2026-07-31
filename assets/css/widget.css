@@ -35,7 +35,7 @@
     display: grid;
     grid-template-columns: var(--kpc-gallery-width, 140px) 1fr;
     gap: 28px;
-    align-items: start;
+    align-items: center;
     box-sizing: border-box;
 }
 
@@ -177,7 +177,7 @@
     position: relative;
     width: 100%;
 	height: 500px;
-    aspect-ratio: var(--kpc-ratio, 4/3);
+    aspect-ratio: var(--kpc-ratio);
     overflow: hidden;
     background: var(--kpc-gray-200);
     border-radius: var(--kpc-radius-lg);
@@ -199,8 +199,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    z-index: 1;
-    clip-path: inset(0 50% 0 0);
+    z-index: 2;
     transition: clip-path 0.12s linear;
     user-select: none;
     -webkit-user-drag: none;
@@ -218,7 +217,6 @@
     object-fit: cover;
     display: block;
     z-index: 1;
-    clip-path: inset(0 0 0 50%);
     transition: clip-path 0.12s linear;
     user-select: none;
     -webkit-user-drag: none;
@@ -230,12 +228,13 @@
 .kpc-divider-container {
     position: absolute;
     top: 0;
-    left: var(--kpc-divider-position, 50%);
-    height: 100%;
+    left: 50%;
     width: 0;
+    height: 100%;
     z-index: 5;
-    pointer-events: none;
+    transform: translateX(-50%);
     transition: left 0.12s linear;
+    pointer-events: none;
 }
 
 /* ============================================
@@ -244,11 +243,12 @@
 .kpc-divider {
     position: absolute;
     top: 0;
-    left: -1px;
+    left: 0;
     width: 2px;
     height: 100%;
     background: #FFFFFF;
-    box-shadow: var(--kpc-shadow-sm);
+    transform: translateX(-1px);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     pointer-events: none;
 }
 

@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: Kodeem Portfolio Compare
- * Plugin URI: https://kodeem.com/
+ * Plugin Name: Kodeem Clipath Elementor Addon
+ * Plugin URI: https://kodeemlabs.io/products/plugin
  * Description: Portfolio comparison widget for Elementor
- * Version: 1.0.0
- * Author: Kodeem
- * Author URI: https://kodeem.com/
+ * Version: 2.0.1
+ * Author: Kodeem Labs
+ * Author URI: https://kodeemlabs.io/
  * Text Domain: kodeem-portfolio-compare
  * Domain Path: /languages
  * Elementor tested up to: 3.18.0
