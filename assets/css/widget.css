@@ -1,0 +1,759 @@
+/* ============================================
+    Base Reset & Variables
+   ============================================ */
+:root {
+    --kpc-primary: #2563EB;
+    --kpc-primary-hover: #1D4ED8;
+    --kpc-primary-rgb: 37, 99, 235;
+    --kpc-white: #FFFFFF;
+    --kpc-gray-100: #F3F4F6;
+    --kpc-gray-200: #E5E7EB;
+    --kpc-gray-300: #D1D5DB;
+    --kpc-gray-400: #9CA3AF;
+    --kpc-gray-500: #6B7280;
+    --kpc-gray-600: #4B5563;
+    --kpc-gray-700: #374151;
+    --kpc-gray-800: #1F2937;
+    --kpc-gray-900: #111827;
+    --kpc-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --kpc-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --kpc-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
+    --kpc-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+    --kpc-transition-fast: 150ms ease;
+    --kpc-transition-base: 250ms ease;
+    --kpc-transition-slow: 350ms ease;
+    --kpc-radius-sm: 8px;
+    --kpc-radius-md: 12px;
+    --kpc-radius-lg: 20px;
+    --kpc-radius-full: 50%;
+}
+
+/* ============================================
+    Widget Container
+   ============================================ */
+.kpc-widget {
+    display: grid;
+    grid-template-columns: var(--kpc-gallery-width, 140px) 1fr;
+    gap: 28px;
+    align-items: start;
+    box-sizing: border-box;
+}
+
+.kpc-widget *,
+.kpc-widget *::before,
+.kpc-widget *::after {
+    box-sizing: border-box;
+}
+
+/* ============================================
+    Gallery
+   ============================================ */
+.kpc-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+/* Scrollbar styling for gallery */
+.kpc-gallery::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+.kpc-gallery::-webkit-scrollbar-track {
+    background: var(--kpc-gray-200);
+    border-radius: var(--kpc-radius-full);
+}
+
+.kpc-gallery::-webkit-scrollbar-thumb {
+    background: var(--kpc-primary);
+    border-radius: var(--kpc-radius-full);
+}
+
+.kpc-gallery::-webkit-scrollbar-thumb:hover {
+    background: var(--kpc-primary-hover);
+}
+
+/* ============================================
+    Thumbnails
+   ============================================ */
+.kpc-thumb {
+    position: relative;
+    border: 2px solid transparent;
+    background: none;
+    padding: 0;
+    border-radius: var(--kpc-radius-lg);
+    overflow: hidden;
+    cursor: pointer;
+    transition:
+        transform var(--kpc-transition-base),
+        border-color var(--kpc-transition-base),
+        box-shadow var(--kpc-transition-base);
+    will-change: transform;
+}
+
+.kpc-thumb:hover {
+    transform: translateY(-3px);
+}
+
+.kpc-thumb:focus-visible {
+    outline: 2px solid var(--kpc-primary);
+    outline-offset: 2px;
+}
+
+.kpc-thumb:active {
+    transform: scale(0.96);
+}
+
+.kpc-thumb.is-active {
+    border-color: var(--kpc-primary);
+    box-shadow: 0 10px 30px rgba(var(--kpc-primary-rgb), 0.18);
+    transform: translateY(-2px);
+}
+
+.kpc-thumb.is-active::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    padding: 2px;
+    background: linear-gradient(135deg, var(--kpc-primary), #7C3AED);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.kpc-thumb.is-loading {
+    animation: kpc-pulse 1.5s ease-in-out infinite;
+}
+
+.kpc-thumb-image {
+    aspect-ratio: 1 / 1;
+    background: var(--kpc-gray-200);
+    overflow: hidden;
+    position: relative;
+}
+
+.kpc-thumb-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform var(--kpc-transition-slow);
+}
+
+.kpc-thumb:hover .kpc-thumb-image img {
+    transform: scale(1.05);
+}
+
+/* Thumbnail progress indicator */
+.kpc-thumb-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--kpc-primary);
+    width: 0%;
+    transition: width var(--kpc-transition-fast);
+    border-radius: 0 var(--kpc-radius-sm) var(--kpc-radius-sm) 0;
+}
+
+.kpc-thumb.is-active .kpc-thumb-progress {
+    width: 100%;
+}
+
+.kpc-thumb.is-playing .kpc-thumb-progress {
+    animation: kpc-progress 3s linear forwards;
+}
+
+/* ============================================
+    Preview Container
+   ============================================ */
+.kpc-preview {
+    position: relative;
+    width: 100%;
+	height: 500px;
+    aspect-ratio: var(--kpc-ratio, 4/3);
+    overflow: hidden;
+    background: var(--kpc-gray-200);
+    border-radius: var(--kpc-radius-lg);
+}
+
+.kpc-preview:focus {
+    outline: 2px solid var(--kpc-primary);
+    outline-offset: 4px;
+}
+
+/* ============================================
+    BEFORE IMAGE - Full container with clip-path
+   ============================================ */
+.kpc-before-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    z-index: 1;
+    clip-path: inset(0 50% 0 0);
+    transition: clip-path 0.12s linear;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* ============================================
+    AFTER IMAGE - Full container with clip-path
+   ============================================ */
+.kpc-after-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    z-index: 1;
+    clip-path: inset(0 0 0 50%);
+    transition: clip-path 0.12s linear;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* ============================================
+    DIVIDER CONTAINER - Holds both the line and handle
+   ============================================ */
+.kpc-divider-container {
+    position: absolute;
+    top: 0;
+    left: var(--kpc-divider-position, 50%);
+    height: 100%;
+    width: 0;
+    z-index: 5;
+    pointer-events: none;
+    transition: left 0.12s linear;
+}
+
+/* ============================================
+    DIVIDER - The vertical line
+   ============================================ */
+.kpc-divider {
+    position: absolute;
+    top: 0;
+    left: -1px;
+    width: 2px;
+    height: 100%;
+    background: #FFFFFF;
+    box-shadow: var(--kpc-shadow-sm);
+    pointer-events: none;
+}
+
+/* ============================================
+    HANDLE - The drag control (like the example)
+   ============================================ */
+.kpc-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    border-radius: var(--kpc-radius-full);
+    border: 3px solid #FFFFFF;
+    background: white;
+    color: black !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ew-resize;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    z-index: 10;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    will-change: transform;
+    touch-action: none;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+    pointer-events: auto;
+}
+
+.kpc-handle:hover {
+    transform: translate(-50%, -50%) scale(1.08);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+.kpc-handle:active {
+    transform: translate(-50%, -50%) scale(0.94);
+}
+
+.kpc-handle:focus-visible {
+    outline: 2px solid var(--kpc-white);
+    outline-offset: 4px;
+}
+
+/* ============================================
+    PULSE CONTAINER - The animated circle
+   ============================================ */
+.kpc-pulse-container {
+    position: relative;
+    display: inline-block;
+    pointer-events: none;
+	top: 50%;
+}
+
+.kpc-pulse-container::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+    animation: kpc-pulse-ring 1.5s infinite;
+    pointer-events: none;
+}
+
+.kpc-pulse-container svg {
+    position: relative;
+    display: block;
+    z-index: 3;
+    pointer-events: none;
+}
+
+@keyframes kpc-pulse-ring {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0;
+    }
+}
+
+/* ============================================
+    LABELS - Updated to match the example style
+   ============================================ */
+.kpc-label {
+    position: absolute;
+	bottom: 20px;
+    padding: 10px 20px;
+    border-radius: 0.3rem;
+    background: rgba(255, 255, 255, 0.62);
+    color: #3a3a3a;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 8;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    letter-spacing: 2px;
+    user-select: none;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.kpc-label-before {
+    left: 20px;
+    z-index: 5;
+}
+
+.kpc-label-after {
+    right: 20px;
+    z-index: 3;
+}
+
+.kpc-label.is-hidden {
+    opacity: 0;
+}
+
+/* ============================================
+    FULLSCREEN BUTTON
+   ============================================ */
+.kpc-fullscreen {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 9;
+    width: 40px;
+    height: 40px;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 0.3rem;
+    background: rgba(255, 255, 255, 0.62);
+    color: #3a3a3a;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, transform 0.2s ease;
+    font-size: 20px;
+    font-weight: bold;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.kpc-fullscreen:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: scale(1.05);
+}
+
+.kpc-fullscreen:focus-visible {
+    outline: 2px solid var(--kpc-primary);
+    outline-offset: 2px;
+}
+
+.kpc-fullscreen.is-fullscreen {
+    background: var(--kpc-primary);
+    color: #FFFFFF;
+}
+
+/* ============================================
+    STATES
+   ============================================ */
+.kpc-preview.is-transitioning .kpc-before-image,
+.kpc-preview.is-transitioning .kpc-after-image {
+    opacity: 0.5;
+}
+
+.kpc-preview.is-dragging .kpc-before-image,
+.kpc-preview.is-dragging .kpc-after-image,
+.kpc-preview.is-dragging .kpc-divider {
+    transition: none !important;
+}
+
+.kpc-preview.is-loading .kpc-before-image,
+.kpc-preview.is-loading .kpc-after-image {
+    opacity: 0;
+}
+
+.kpc-preview .kpc-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--kpc-gray-100);
+    color: var(--kpc-gray-400);
+    z-index: 0;
+}
+
+.kpc-preview .kpc-placeholder svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+/* ============================================
+    Animations
+   ============================================ */
+@keyframes kpc-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes kpc-progress {
+    0% { width: 0%; }
+    100% { width: 100%; }
+}
+
+@keyframes kpc-fade-in {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes kpc-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ============================================
+    Responsive - Tablet (768px - 1023px)
+   ============================================ */
+@media (max-width: 1023px) {
+    .kpc-widget {
+        gap: 20px;
+    }
+
+    .kpc-handle {
+        width: 48px;
+        height: 48px;
+        font-size: 18px;
+    }
+
+    .kpc-label {
+        font-size: 12px;
+        padding: 8px 16px;
+    }
+}
+
+/* ============================================
+    Responsive - Mobile (< 768px)
+   ============================================ */
+@media (max-width: 767px) {
+    .kpc-widget {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .kpc-gallery {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 12px;
+        padding: 4px 2px 8px 2px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .kpc-gallery::-webkit-scrollbar {
+        height: 3px;
+    }
+
+    .kpc-thumb {
+        flex: 0 0 80px;
+        min-width: 80px;
+        scroll-snap-align: start;
+    }
+
+    .kpc-thumb-image {
+        aspect-ratio: 1 / 1;
+    }
+
+    .kpc-preview {
+        min-height: 300px;
+        aspect-ratio: auto;
+    }
+
+    .kpc-handle {
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+        border-width: 2px;
+    }
+
+    .kpc-label {
+        top: 12px;
+        padding: 6px 12px;
+        font-size: 12px;
+        letter-spacing: 1px;
+    }
+
+    .kpc-label-before {
+        left: 12px;
+    }
+
+    .kpc-label-after {
+        right: 12px;
+    }
+
+    .kpc-fullscreen {
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .kpc-pulse-container::before {
+        width: 50px;
+        height: 50px;
+    }
+
+    .kpc-pulse-container svg {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* ============================================
+    Responsive - Small Mobile (< 480px)
+   ============================================ */
+@media (max-width: 480px) {
+    .kpc-widget {
+        gap: 12px;
+    }
+
+    .kpc-thumb {
+        flex: 0 0 64px;
+        min-width: 64px;
+    }
+
+    .kpc-handle {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+
+    .kpc-preview {
+        min-height: 220px;
+    }
+}
+
+/* ============================================
+    Reduced Motion Preferences
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    .kpc-thumb,
+    .kpc-thumb .kpc-thumb-image img,
+    .kpc-handle,
+    .kpc-label,
+    .kpc-fullscreen,
+    .kpc-before-image,
+    .kpc-after-image {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+
+    .kpc-thumb:hover {
+        transform: none !important;
+    }
+
+    .kpc-handle:hover {
+        transform: translate(-50%, -50%) !important;
+    }
+
+    .kpc-thumb-progress {
+        animation: none !important;
+    }
+
+    .kpc-pulse-container::before {
+        animation: none !important;
+    }
+}
+
+/* ============================================
+    Dark Mode Support
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+    .kpc-thumb-image {
+        background: var(--kpc-gray-800);
+    }
+
+    .kpc-preview {
+        background: var(--kpc-gray-900);
+    }
+
+    .kpc-label {
+        background: rgba(0, 0, 0, 0.8);
+        color: #ffffff;
+    }
+
+    .kpc-fullscreen {
+        background: rgba(0, 0, 0, 0.8);
+        color: #ffffff;
+    }
+
+    .kpc-fullscreen:hover {
+        background: rgba(0, 0, 0, 0.95);
+    }
+
+    .kpc-preview .kpc-placeholder {
+        background: var(--kpc-gray-800);
+        color: var(--kpc-gray-500);
+    }
+}
+
+/* ============================================
+    Print Styles
+   ============================================ */
+@media print {
+    .kpc-widget {
+        display: block !important;
+    }
+
+    .kpc-gallery,
+    .kpc-fullscreen,
+    .kpc-label,
+    .kpc-divider,
+    .kpc-handle {
+        display: none !important;
+    }
+
+    .kpc-before-image {
+        position: relative !important;
+        clip-path: none !important;
+    }
+
+    .kpc-after-image {
+        position: relative !important;
+        clip-path: none !important;
+        margin-top: 16px !important;
+    }
+}
+
+/* ============================================
+    PREVIEW HEIGHT CONTROL
+   ============================================ */
+.kpc-preview {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: var(--kpc-gray-200, #E5E7EB);
+    border-radius: var(--kpc-radius-lg, 20px);
+}
+
+/* When custom height is set, use height instead of aspect-ratio */
+.kpc-preview[style*="height:"] {
+    aspect-ratio: auto !important;
+}
+
+/* Ensure images fill the container properly */
+.kpc-preview .kpc-before-image,
+.kpc-preview .kpc-after-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: var(--kpc-object-fit, cover);
+    display: block;
+}
+
+/* For different object-fit values */
+.kpc-preview .kpc-before-image {
+    clip-path: inset(0 50% 0 0);
+    transition: clip-path 0.12s linear;
+    z-index: 1;
+}
+
+.kpc-preview .kpc-after-image {
+    clip-path: inset(0 0 0 50%);
+    transition: clip-path 0.12s linear;
+    z-index: 1;
+}
+
+/* Mobile responsive overrides */
+@media (max-width: 767px) {
+    .kpc-preview {
+        min-height: 200px !important;
+        max-height: 500px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .kpc-preview {
+        min-height: 150px !important;
+        max-height: 400px !important;
+    }
+}
